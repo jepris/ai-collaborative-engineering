@@ -61,3 +61,15 @@
 - Referensi daftar Vosk: https://alphacephei.com/vosk/models
 
 **Langkah berikutnya:** `git pull origin main`, lalu instal ulang dependencies pada virtual environment, jalankan `python main.py`.
+
+
+### ChatGPT — Catatan 4: Model Whisper disimpan di folder project
+
+**Tanggal:** 2026-11-24  
+**Status:** COMMITTED — menunggu tes Windows
+
+- Master menyelesaikan instalasi dependency Python.
+- Lokasi download model Whisper diubah ke `test-sementara/jarvis-mvp/models/whisper-cache/` menggunakan `download_root`.
+- `.venv` dan cache model tidak masuk Git karena aturan `.gitignore`.
+- `jarvis/voice.py` dan `README.md` diperbarui.
+- Langkah berikutnya: `git pull origin main`, jalankan `python main.py`, klik tombol microphone, lalu tes perintah suara.
