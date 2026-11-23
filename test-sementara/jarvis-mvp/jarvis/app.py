@@ -1,6 +1,6 @@
 from PySide6.QtCore import QObject, QThread, Signal, Slot, Qt
 from PySide6.QtWidgets import (
-    QApplication, QFrame, QLabel, QMainWindow, QPushButton,
+    QApplication, QFrame, QLabel, QMainWindow, QPushButton, QProgressBar,
     QVBoxLayout, QWidget,
 )
 
@@ -13,6 +13,7 @@ MODEL_NAME = "small"
 
 class VoiceWorker(QObject):
     status_changed = Signal(str)
+    audio_level = Signal(int, float)
     recognized = Signal(str, str)
     failed = Signal(str)
     finished = Signal()
@@ -20,7 +21,8 @@ class VoiceWorker(QObject):
     @Slot()
     def run(self):
         try:
-            transcript = transcribe_once(MODEL_NAME, on_status=self.status_changed.emit)
+            transcript = transcribe_once(MODEL_NAME, on_status=self.status_changed.emit,
+                                       on_audio_level=self.audio_level.emit)
             response = handle_command(transcript) if transcript else "Maaf Master, suara belum terbaca. Silakan coba lagi."
             self.recognized.emit(transcript, response)
             speak(response)
@@ -54,6 +56,17 @@ class MainWindow(QMainWindow):
         self.status.setObjectName("status")
         self.status.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.status)
+
+        self.voice_indicator = QLabel("MICROPHONE  •  STANDBY")
+        self.voice_indicator.setObjectName("voice_indicator")
+        self.voice_indicator.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.voice_indicator)
+
+        self.audio_meter = QProgressBar()
+        self.audio_meter.setRange(0, 100)
+        self.audio_meter.setValue(0)
+        self.audio_meter.setTextVisible(False)
+        layout.addWidget(self.audio_meter)
 
         ring = QLabel("◉")
         ring.setObjectName("ring")
@@ -92,6 +105,9 @@ class MainWindow(QMainWindow):
                           border-radius: 9px; padding: 15px; font-size: 15px; font-weight: 700; }
             QPushButton:hover { background: #0b9dc7; }
             QPushButton:disabled { background: #315060; color: #a8b9c0; }
+            QLabel#voice_indicator { color: #8cb4c2; font-size: 13px; font-weight: 600; }
+            QProgressBar { background: #0d2637; border: 1px solid #1d6681; border-radius: 6px; height: 13px; }
+            QProgressBar::chunk { background: #18c8f5; border-radius: 5px; }
             QLabel#hint { color: #7f9da8; font-size: 12px; }
         """)
 
@@ -99,13 +115,16 @@ class MainWindow(QMainWindow):
     def start_listening(self):
         self.button.setEnabled(False)
         self.status.setText("PREPARING  •  MENYIAPKAN WHISPER")
-        self.heard.setText("YOU: Mendengarkan...")
+        self.heard.setText("YOU: Menunggu rekaman...")
+        self.voice_indicator.setText("MICROPHONE  •  MENYIAPKAN")
+        self.audio_meter.setValue(0)
         self.answer.setText("JARVIS: —")
         self.thread = QThread(self)
         self.worker = VoiceWorker()
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
-        self.worker.status_changed.connect(self.status.setText)
+        self.worker.status_changed.connect(self.on_status_changed)
+        self.worker.audio_level.connect(self.on_audio_level)
         self.worker.recognized.connect(self.on_recognized)
         self.worker.failed.connect(self.on_failed)
         self.worker.finished.connect(self.thread.quit)
@@ -113,6 +132,27 @@ class MainWindow(QMainWindow):
         self.thread.finished.connect(self.on_finished)
         self.thread.finished.connect(self.thread.deleteLater)
         self.thread.start()
+
+    @Slot(str)
+    def on_status_changed(self, message):
+        self.status.setText(message)
+        if message.startswith("LOADING"):
+            self.voice_indicator.setText("MICROPHONE  •  MENUNGGU MODEL")
+        elif message.startswith("PROCESSING"):
+            self.voice_indicator.setText("MICROPHONE  •  REKAMAN SELESAI")
+            self.audio_meter.setValue(0)
+
+    @Slot(int, float)
+    def on_audio_level(self, level, remaining):
+        self.audio_meter.setValue(level)
+        detected = level >= 8
+        self.voice_indicator.setText(
+            f"{'SUARA TERDETEKSI' if detected else 'MENDENGARKAN'}"
+            f"  •  {remaining:.1f} DETIK TERSISA"
+        )
+        self.voice_indicator.setStyleSheet(
+            "color: #52f5ab;" if detected else "color: #8cb4c2;"
+        )
 
     @Slot(str, str)
     def on_recognized(self, transcript, response):
@@ -123,11 +163,16 @@ class MainWindow(QMainWindow):
     @Slot(str)
     def on_failed(self, message):
         self.status.setText("AUDIO ERROR")
+        self.voice_indicator.setText("MICROPHONE  •  ERROR")
+        self.audio_meter.setValue(0)
         self.answer.setText(f"JARVIS: {message}")
 
     @Slot()
     def on_finished(self):
         self.button.setEnabled(True)
+        self.audio_meter.setValue(0)
+        self.voice_indicator.setText("MICROPHONE  •  STANDBY")
+        self.voice_indicator.setStyleSheet("")
         if self.status.text() != "AUDIO ERROR":
             self.status.setText("SYSTEM READY  •  OFFLINE MODE")
         self.thread = None
