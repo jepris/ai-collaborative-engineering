@@ -18,6 +18,6 @@ Tidak perlu mengunduh model Vosk. Model multilingual Whisper `small` diunduh oto
 
 Tekan **MULAI DENGARKAN (6 DETIK)** lalu ucapkan "Siapa gua?", "Halo Jarvis", atau "Siapa kamu?". Jarvis menampilkan transkrip dan membalas melalui Windows TTS.
 
-**Catatan:** Model `small` pada CPU bisa lambat. Untuk tes lebih ringan, ganti `MODEL_NAME = "small"` menjadi `MODEL_NAME = "base"` di `jarvis/app.py`. Akurasi bisa berkurang. Microphone perlu diizinkan di Windows Settings > Privacy & security > Microphone. Suara TTS Bahasa Indonesia bergantung voice Windows yang terpasang. UI masih sederhana; belum ada waveform atau wake word.
+**Catatan:** Model `small` pada CPU bisa lambat. Untuk tes lebih ringan, ganti `MODEL_NAME = "small"` menjadi `MODEL_NAME = "base"` di `jarvis/app.py`. Akurasi bisa berkurang. Microphone perlu diizinkan di Windows Settings > Privacy & security > Microphone. Suara TTS Bahasa Indonesia bergantung voice Windows yang terpasang. UI menampilkan indikator volume microphone, deteksi suara berbasis ambang volume, dan hitung mundur 6 detik. Indikator ini bukan VAD atau waveform penuh; wake word belum tersedia.
 
 Audio diproses lokal. Jangan commit rekaman, cache model, atau rahasia pribadi.
