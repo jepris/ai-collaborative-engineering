@@ -73,3 +73,14 @@
 - `.venv` dan cache model tidak masuk Git karena aturan `.gitignore`.
 - `jarvis/voice.py` dan `README.md` diperbarui.
 - Langkah berikutnya: `git pull origin main`, jalankan `python main.py`, klik tombol microphone, lalu tes perintah suara.
+
+
+### ChatGPT — Catatan 5: Status voice pipeline
+
+**Tanggal:** 2026-11-24  
+**Status:** COMMITTED — belum diverifikasi di Windows
+
+- Pengguna melaporkan jendela muncul, tetapi terlihat stuck setelah menekan microphone.
+- `jarvis/voice.py` kini mengirim status loading/download model, recording 6 detik, dan processing transcription.
+- `jarvis/app.py` menampilkan status dari worker melalui Qt signal sehingga tidak lagi langsung mengklaim sedang mendengarkan saat model belum siap.
+- Langkah uji: hentikan aplikasi lama, `git pull origin main`, jalankan ulang, klik microphone, catat status terakhir dan error terminal jika masih stuck.
