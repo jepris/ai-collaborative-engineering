@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from PySide6.QtCore import QObject, QThread, Signal, Slot, Qt
 from PySide6.QtWidgets import (
     QApplication, QFrame, QLabel, QMainWindow, QPushButton,
@@ -10,7 +8,7 @@ from jarvis.commands import handle_command
 from jarvis.tts import speak
 from jarvis.voice import transcribe_once
 
-MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "vosk-id"
+MODEL_NAME = "small"
 
 
 class VoiceWorker(QObject):
@@ -21,7 +19,7 @@ class VoiceWorker(QObject):
     @Slot()
     def run(self):
         try:
-            transcript = transcribe_once(str(MODEL_PATH))
+            transcript = transcribe_once(MODEL_NAME)
             response = handle_command(transcript) if transcript else "Maaf Master, suara belum terbaca. Silakan coba lagi."
             self.recognized.emit(transcript, response)
             speak(response)
@@ -95,15 +93,9 @@ class MainWindow(QMainWindow):
             QPushButton:disabled { background: #315060; color: #a8b9c0; }
             QLabel#hint { color: #7f9da8; font-size: 12px; }
         """)
-        if not MODEL_PATH.is_dir():
-            self.status.setText("MODEL VOSK BELUM TERPASANG — LIHAT README")
 
     @Slot()
     def start_listening(self):
-        if not MODEL_PATH.is_dir():
-            self.status.setText("ERROR: MODEL TIDAK DITEMUKAN")
-            self.answer.setText("JARVIS: Letakkan model Bahasa Indonesia di models/vosk-id.")
-            return
         self.button.setEnabled(False)
         self.status.setText("LISTENING  •  BICARA SEKARANG (6 DETIK)")
         self.heard.setText("YOU: Mendengarkan...")
