@@ -45,3 +45,19 @@
 - [ ] Pengujian microphone dan speech-to-text di Windows.
 - [ ] Pengujian balasan suara Windows TTS.
 - [ ] Evaluasi hasil pengujian dan perbaikan.
+
+
+### ChatGPT — Catatan 3: Koreksi STT Bahasa Indonesia
+
+**Tanggal:** 2026-11-24  
+**Status:** FIX_COMMITTED — belum diuji di Windows Master
+
+- Master melaporkan tidak ada model Bahasa Indonesia pada daftar model resmi Vosk.
+- Pemeriksaan daftar resmi Vosk tidak menemukan model Bahasa Indonesia; instruksi awal `vosk-model-small-id-0.22` keliru.
+- STT diganti ke `faster-whisper` dengan model multilingual `small` dan `language="id"`, berjalan lokal tanpa AI API.
+- Diperbarui: `requirements.txt`, `jarvis/voice.py`, `jarvis/app.py`, `README.md`.
+- Model Whisper akan diunduh otomatis pada penggunaan pertama; tes microphone/TTS masih menunggu Windows Master.
+- Commit terakhir perubahan: `38fe9ad0b00fbceaa313e751f9d94d630cd9065f`.
+- Referensi daftar Vosk: https://alphacephei.com/vosk/models
+
+**Langkah berikutnya:** `git pull origin main`, lalu instal ulang dependencies pada virtual environment, jalankan `python main.py`.
