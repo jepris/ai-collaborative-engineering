@@ -14,7 +14,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Tidak perlu mengunduh model Vosk. Model multilingual Whisper `small` diunduh otomatis saat pertama kali digunakan (internet diperlukan, ukuran beberapa ratus MB), lalu tersimpan di cache lokal. Pemakaian berikutnya dapat offline jika model sudah tersedia.
+Tidak perlu mengunduh model Vosk. Model multilingual Whisper `small` diunduh otomatis saat pertama kali digunakan (internet diperlukan, ukuran beberapa ratus MB), lalu tersimpan di folder project `models/whisper-cache/` (diabaikan oleh Git). Pemakaian berikutnya dapat offline jika model sudah tersedia.
 
 Tekan **MULAI DENGARKAN (6 DETIK)** lalu ucapkan "Siapa gua?", "Halo Jarvis", atau "Siapa kamu?". Jarvis menampilkan transkrip dan membalas melalui Windows TTS.
 
