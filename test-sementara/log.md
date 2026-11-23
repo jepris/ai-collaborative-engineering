@@ -95,3 +95,15 @@
 - Audio dibaca per 100 ms melalui `sounddevice.InputStream`; transkripsi Whisper tetap dilakukan setelah 6 detik.
 - Tidak ada dependensi baru; jalankan `git pull origin main` lalu `./.venv/Scripts/python.exe main.py`.
 - Deteksi ini berdasarkan volume, bukan pengenal ucapan/VAD; suara lingkungan keras dapat memicu indikator.
+
+
+### ChatGPT — Catatan 7: Telegram bot dua mode
+
+**Tanggal:** 2026-11-24  
+**Status:** COMMITTED — menunggu tes Windows/Telegram
+
+- Telegram bot opsional menggunakan long polling; desktop `main.py` tidak diubah.
+- `/chat` membalas teks dan `/voice` membalas OGG/Opus voice note; input teks dan Telegram voice note keduanya memakai `jarvis.commands.handle_command`.
+- Menambahkan `jarvis/telegram_bot.py`, `jarvis/telegram_audio.py`, `.env.example`, dependency `python-telegram-bot` dan `python-dotenv`, serta petunjuk README.
+- Token hanya dalam `.env` lokal (diabaikan Git); `/id` untuk setup whitelist user ID. FFmpeg diperlukan untuk konversi voice.
+- Belum diuji di Windows; validasi perlu meliputi koneksi token, whitelist, mode chat, transkripsi voice, dan Windows TTS menjadi voice note.
