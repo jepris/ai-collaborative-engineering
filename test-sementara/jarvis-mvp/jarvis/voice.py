@@ -1,35 +1,16 @@
-"""Audio capture and offline speech recognition; runs outside the UI thread."""
-import json
-import queue
-import time
-
+"""Offline Indonesian transcription with multilingual Whisper."""
+import numpy as np
 import sounddevice as sd
-from vosk import KaldiRecognizer, Model
+from faster_whisper import WhisperModel
 
 SAMPLE_RATE = 16000
+_model = None
 
-
-def transcribe_once(model_path: str, seconds: int = 6) -> str:
-    model = Model(model_path)
-    recognizer = KaldiRecognizer(model, SAMPLE_RATE)
-    chunks: queue.Queue[bytes] = queue.Queue()
-
-    def callback(indata, frames, time_info, status):
-        if status:
-            # Audio overflow/underflow should not crash the UI.
-            pass
-        chunks.put(bytes(indata))
-
-    with sd.RawInputStream(
-        samplerate=SAMPLE_RATE, blocksize=4000, dtype="int16", channels=1,
-        callback=callback,
-    ):
-        deadline = time.monotonic() + seconds
-        while time.monotonic() < deadline:
-            try:
-                data = chunks.get(timeout=min(0.25, max(0.01, deadline - time.monotonic())))
-            except queue.Empty:
-                continue
-            recognizer.AcceptWaveform(data)
-    result = json.loads(recognizer.FinalResult())
-    return result.get("text", "").strip()
+def transcribe_once(model_path: str = "small", seconds: int = 6) -> str:
+    global _model
+    if _model is None:
+        _model = WhisperModel(model_path, device="cpu", compute_type="int8")
+    recording = sd.rec(int(seconds * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=1, dtype="float32")
+    sd.wait()
+    segments, _ = _model.transcribe(np.asarray(recording[:, 0], dtype=np.float32), language="id", beam_size=3, vad_filter=True)
+    return " ".join(s.text.strip() for s in segments).strip()
