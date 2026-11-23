@@ -12,6 +12,7 @@ MODEL_NAME = "small"
 
 
 class VoiceWorker(QObject):
+    status_changed = Signal(str)
     recognized = Signal(str, str)
     failed = Signal(str)
     finished = Signal()
@@ -19,7 +20,7 @@ class VoiceWorker(QObject):
     @Slot()
     def run(self):
         try:
-            transcript = transcribe_once(MODEL_NAME)
+            transcript = transcribe_once(MODEL_NAME, on_status=self.status_changed.emit)
             response = handle_command(transcript) if transcript else "Maaf Master, suara belum terbaca. Silakan coba lagi."
             self.recognized.emit(transcript, response)
             speak(response)
@@ -97,13 +98,14 @@ class MainWindow(QMainWindow):
     @Slot()
     def start_listening(self):
         self.button.setEnabled(False)
-        self.status.setText("LISTENING  •  BICARA SEKARANG (6 DETIK)")
+        self.status.setText("PREPARING  •  MENYIAPKAN WHISPER")
         self.heard.setText("YOU: Mendengarkan...")
         self.answer.setText("JARVIS: —")
         self.thread = QThread(self)
         self.worker = VoiceWorker()
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
+        self.worker.status_changed.connect(self.status.setText)
         self.worker.recognized.connect(self.on_recognized)
         self.worker.failed.connect(self.on_failed)
         self.worker.finished.connect(self.thread.quit)
