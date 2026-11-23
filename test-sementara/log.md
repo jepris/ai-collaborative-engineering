@@ -84,3 +84,14 @@
 - `jarvis/voice.py` kini mengirim status loading/download model, recording 6 detik, dan processing transcription.
 - `jarvis/app.py` menampilkan status dari worker melalui Qt signal sehingga tidak lagi langsung mengklaim sedang mendengarkan saat model belum siap.
 - Langkah uji: hentikan aplikasi lama, `git pull origin main`, jalankan ulang, klik microphone, catat status terakhir dan error terminal jika masih stuck.
+
+
+### ChatGPT — Catatan 6: UI listening dan deteksi level suara
+
+**Tanggal:** 2026-11-24  
+**Status:** COMMITTED — menunggu pengujian Windows
+
+- Saat merekam, UI menampilkan progress bar volume microphone, indikator `SUARA TERDETEKSI` (ambang RMS sederhana), dan countdown 6 detik.
+- Audio dibaca per 100 ms melalui `sounddevice.InputStream`; transkripsi Whisper tetap dilakukan setelah 6 detik.
+- Tidak ada dependensi baru; jalankan `git pull origin main` lalu `./.venv/Scripts/python.exe main.py`.
+- Deteksi ini berdasarkan volume, bukan pengenal ucapan/VAD; suara lingkungan keras dapat memicu indikator.
