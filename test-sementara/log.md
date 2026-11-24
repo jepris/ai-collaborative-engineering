@@ -107,3 +107,21 @@
 - Menambahkan `jarvis/telegram_bot.py`, `jarvis/telegram_audio.py`, `.env.example`, dependency `python-telegram-bot` dan `python-dotenv`, serta petunjuk README.
 - Token hanya dalam `.env` lokal (diabaikan Git); `/id` untuk setup whitelist user ID. FFmpeg diperlukan untuk konversi voice.
 - Belum diuji di Windows; validasi perlu meliputi koneksi token, whitelist, mode chat, transkripsi voice, dan Windows TTS menjadi voice note.
+
+
+### ChatGPT — Catatan 8: Troubleshooting koneksi Telegram API
+
+**Tanggal:** 2026-11-24  
+**Status:** BLOCKED — koneksi Telegram API belum berhasil; belum ada perubahan source.
+
+- FFmpeg Windows essentials telah diekstrak; panduan penambahan folder bin ke User PATH diberikan. Hasil verifikasi versi belum dikonfirmasi.
+- Python Telegram bot gagal pada inisialisasi `getMe` dengan `ReadTimeout` dan HTTP 429 (`retry_after: 32`). Proses berhenti dan prompt terminal kembali; pesan "Jarvis Telegram bot aktif" bukan bukti startup berhasil.
+- `curl -I https://api.telegram.org` menghasilkan HTTP 302, sehingga URL dasar dapat dijangkau.
+- Tes langsung `getMe` melalui browser tanpa Python juga menghasilkan 429, termasuk setelah menunggu sekitar lima menit dan mencoba hotspot. Tes curl lain mengalami timeout 20 detik. Penyebab rate limit/timeout belum dipastikan.
+- Tes Bash pertama salah menggunakan token sebagai nama variabel dan menghasilkan 401; hasil tersebut tidak membuktikan token asli invalid.
+- Tes IPv4 terakhir gagal sebelum request dikirim karena terdapat spasi di akhir token yang dipaste. Langkah berikutnya: trim whitespace token dan ulangi getMe sekali dengan token baru yang valid; patuhi retry_after jika 429.
+- Token sempat terekspos dalam output troubleshooting. Wajib revoke melalui BotFather dan simpan token pengganti hanya di .env lokal. Jangan mencatat token di Git/log. Perlu menonaktifkan atau menyaring logging HTTPX yang menampilkan URL berisi token.
+- TELEGRAM_ALLOWED_USER_ID adalah whitelist, bukan penyebab kegagalan getMe. Bisa diisi setelah memperoleh ID akun; status pengisian belum dikonfirmasi.
+- Belum berhasil memverifikasi getMe dengan ok:true, /start, /chat, /voice maupun input voice note. Desktop tetap terpisah dan tidak diubah.
+
+**Langkah berikutnya:** validasi getMe dengan token bersih dan aman sebelum menjalankan backend; setelah koneksi berhasil, uji whitelist dan kedua mode. Pertimbangkan bootstrap retry terbatas, timeout yang sesuai, dan pesan startup yang akurat setelah diagnosis. 
