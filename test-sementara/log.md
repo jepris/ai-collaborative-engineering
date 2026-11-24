@@ -161,3 +161,30 @@
 - Tidak ada merge branch tes atau perubahan source Jarvis. Master tetap pemegang keputusan akhir.
 
 **Bukti:** https://github.com/jepris/ai-collaborative-engineering/commit/8d7e1737d11d3bab6039c9358ad25351d28f943e
+
+
+### [Claude] — Catatan 11: Patch Telegram gateway
+
+**Tanggal:** 2026-11-24  
+**Status:** IMPLEMENTED_UNVERIFIED — tes unit lulus di sandbox Claude; semua pengujian Telegram/Windows PENDING.
+
+- Branch: `claude/telegram-gateway-fix` (dari `main` `7b62ccb`). Commit kode: `e4c152334d7a88674198b01b2414b17a5c4dbca6`. PR ke `main` dibuka, belum di-merge (nomor/link PR ada di halaman PR; Claude tidak merge).
+- File berubah: `test-sementara/jarvis-mvp/jarvis/telegram_bot.py` (+37/-5), baru: `jarvis/logsafe.py`, `tests/test_logsafe.py`, `.gitignore` di root. Tidak ada dependency baru.
+- Sebelum → sesudah:
+  - Timeout default PTB (5 detik read/write/connect) → 30 detik untuk connect/read/write dan getUpdates connect/read.
+  - `logging.basicConfig(INFO)` dengan URL httpx berisi token → logger `httpx`/`httpcore` ke WARNING, ditambah formatter `RedactingFormatter` yang mengganti token dengan `***` di teks akhir log termasuk traceback.
+  - Retry startup mengikuti default PTB (default versi terpasang belum dipastikan; dokumentasi v21 menunjukkan tanpa batas) → `bootstrap_retries=2`.
+  - `print("... aktif")` sebelum `run_polling` → pesan "terhubung sebagai @username" lewat `post_init`, hanya setelah `getMe` berhasil.
+  - Kegagalan startup 429 / timeout → pesan jelas dan keluar sekali (`SystemExit`), tanpa loop dan tanpa traceback.
+  - Root repo tanpa `.gitignore` → ditambahkan (`.env`, `.env.*` kecuali `.env.example`, `*.log`, `.venv/`, `**/models/*`, `*.wav`, `*.mp3`, build).
+- Tidak diubah: long polling, whitelist user ID, `/id` `/chat` `/voice`, input teks dan voice note, Whisper lokal, `handle_command`, Windows TTS, desktop UI.
+- Hasil pengujian aktual (sandbox Claude, Python 3): `python -m unittest tests.test_logsafe` → 2 tes OK (token tersamar di pesan dan traceback; secret kosong tidak merusak teks). `py_compile telegram_bot.py` OK. Modul `telegram` tidak terpasang di sandbox, jadi `telegram_bot.py` belum dijalankan; perilaku `RetryAfter`/`NetworkError`/`post_init` belum teruji.
+- PENDING (butuh laptop Master): getMe `ok:true`; bot berjalan; pesan teks dari HP; voice note; balasan teks dan suara; penolakan user tak diizinkan; token tidak muncul di terminal.
+- Risiko: patch tidak menjamin masalah koneksi/429 selesai (penyebab bisa jaringan atau token lama); akurasi `bootstrap_retries` bergantung versi PTB; `commands.py` masih memuat nama pribadi di repo publik (tidak disentuh); `pyttsx3` dari thread belum terbukti; `log.md` rawan konflik merge jika Catatan lain ditambahkan di `main` sebelum PR ini.
+
+**Instruksi tes Windows (dari folder `test-sementara/jarvis-mvp`):**
+1. Matikan semua proses Python/Jarvis. Revoke token di BotFather; simpan token baru hanya di `.env` (satu baris, tanpa kutip/spasi). Isi `TELEGRAM_ALLOWED_USER_ID` setelah mengirim `/id`.
+2. `git fetch` lalu `git checkout claude/telegram-gateway-fix` dan `git pull`.
+3. `./.venv/Scripts/python.exe -m unittest tests.test_logsafe -v`.
+4. Tes `getMe` sekali: `read -rs T; curl -s -m 30 "https://api.telegram.org/bot${T//[[:space:]]/}/getMe"`. Jika 429, tunggu `retry_after`; jangan di-loop.
+5. Jalankan `./.venv/Scripts/python.exe -m jarvis.telegram_bot`; harus tampil "terhubung sebagai @...". Uji teks, `/voice`, voice note, dan akun lain. Catat hasil sebagai Catatan 12.
