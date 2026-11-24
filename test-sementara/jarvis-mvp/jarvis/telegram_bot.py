@@ -7,9 +7,13 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.error import NetworkError, RetryAfter
+from telegram.ext import (
+    Application, ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters,
+)
 
 from jarvis.commands import handle_command
+from jarvis.logsafe import RedactingFormatter
 from jarvis.telegram_audio import make_voice, transcribe_voice
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -17,6 +21,10 @@ TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 ALLOWED_USER_ID = os.getenv("TELEGRAM_ALLOWED_USER_ID", "").strip()
 MODES = {}
 logger = logging.getLogger(__name__)
+
+# shortcut: fixed 30 s timeout and 2 startup retries, raise only if the network stays this slow.
+NETWORK_TIMEOUT = 30
+BOOTSTRAP_RETRIES = 2
 
 
 def authorized(update: Update) -> bool:
@@ -102,18 +110,42 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await message.reply_text("Maaf Master, proses gagal. Periksa terminal bot untuk detail error.")
 
 
+async def on_startup(app: Application) -> None:
+    # Runs only after getMe succeeded, unlike a print placed before run_polling.
+    print(f"Jarvis Telegram bot terhubung sebagai @{app.bot.username}. Tekan Ctrl+C untuk berhenti.")
+
+
 def main():
-    logging.basicConfig(level=logging.INFO)
+    handler = logging.StreamHandler()
+    handler.setFormatter(RedactingFormatter(TOKEN))
+    logging.basicConfig(level=logging.INFO, handlers=[handler])
+    # httpx logs request URLs (which contain the token) at INFO; the formatter above is the backstop.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
     if not TOKEN:
         raise SystemExit("Isi TELEGRAM_BOT_TOKEN di file .env terlebih dahulu.")
-    app = ApplicationBuilder().token(TOKEN).build()
+    app = (
+        ApplicationBuilder()
+        .token(TOKEN)
+        .connect_timeout(NETWORK_TIMEOUT)
+        .read_timeout(NETWORK_TIMEOUT)
+        .write_timeout(NETWORK_TIMEOUT)
+        .get_updates_connect_timeout(NETWORK_TIMEOUT)
+        .get_updates_read_timeout(NETWORK_TIMEOUT)
+        .post_init(on_startup)
+        .build()
+    )
     app.add_handler(CommandHandler("id", show_id))
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("chat", set_mode))
     app.add_handler(CommandHandler("voice", set_mode))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND | filters.VOICE, handle_message))
-    print("Jarvis Telegram bot aktif. Tekan Ctrl+C untuk berhenti.")
-    app.run_polling(drop_pending_updates=True)
+    try:
+        app.run_polling(drop_pending_updates=True, bootstrap_retries=BOOTSTRAP_RETRIES)
+    except RetryAfter as exc:
+        raise SystemExit(f"Telegram membatasi request (429). Tunggu {exc.retry_after} detik, lalu jalankan ulang satu kali.") from None
+    except NetworkError:
+        raise SystemExit("Koneksi ke Telegram gagal atau timeout. Periksa jaringan, lalu jalankan ulang satu kali (jangan di-loop).") from None
 
 
 if __name__ == "__main__":
