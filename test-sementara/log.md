@@ -125,3 +125,24 @@
 - Belum berhasil memverifikasi getMe dengan ok:true, /start, /chat, /voice maupun input voice note. Desktop tetap terpisah dan tidak diubah.
 
 **Langkah berikutnya:** validasi getMe dengan token bersih dan aman sebelum menjalankan backend; setelah koneksi berhasil, uji whitelist dan kedua mode. Pertimbangkan bootstrap retry terbatas, timeout yang sesuai, dan pesan startup yang akurat setelah diagnosis. 
+
+
+### ChatGPT — Catatan 9: Claude GitHub connector write access
+
+**Tanggal:** 2026-11-24  
+**Status:** BLOCKED / PENDING_VERIFICATION — belum ada commit tes dari Claude yang terverifikasi.
+
+- Menurut laporan Claude melalui Master, get_file_contents dan list_commits berhasil (d8c8dcd), tetapi push_files gagal HTTP 403 Resource not accessible by integration pada POST /git/trees; create_or_update_file gagal 403 pada PUT /contents/.gitignore. Tool tulis sudah diizinkan di Claude.
+- Authorized GitHub Apps dilaporkan memuat ChatGPT Codex Connector, Claude, dan Claude Github MCP Connector dengan status Never used. App Claude dilaporkan memiliki read/write code dan Only select repositories (1 repo belum teridentifikasi). Identitas app/token efektif dan penyebab pasti belum diketahui. Repo publik dapat dibaca tanpa akses tulis.
+- Periksa URL connector dan jenis autentikasi. Jika menggunakan remote GitHub MCP resmi https://api.githubcopilot.com/mcp/, pastikan bukan /readonly atau X-MCP-Readonly=true. Jangan mengasumsikan nama app dari URL atau status Never used.
+- Periksa https://github.com/settings/installations (Installed GitHub Apps), https://github.com/settings/apps/authorizations (Authorized GitHub Apps), dan https://github.com/settings/applications (Authorized OAuth Apps). Cocokkan identitas app dengan halaman consent saat reconnect jika perlu.
+- Installation app yang benar harus membatasi akses hanya ke jepris/ai-collaborative-engineering, Contents read/write, Metadata read, dan Pull requests write hanya jika diperlukan. Jangan beri admin/delete atau All repositories. Permission app ditentukan developer; pemilik repo tidak bisa menaikkan permission yang tidak diminta app.
+- Jika perlu disconnect Claude, revoke hanya authorization yang telah diidentifikasi terkait connector, lalu connect kembali dan periksa consent. Jangan mengganggu connector ChatGPT. Scope OAuth klasik repo/public_repo tidak menjamin batas satu repo; tolak jika hanya menawarkan akses luas. Jangan kirim PAT/token melalui chat.
+- Tes oleh Claude sendiri: baca AGENTS.md, buat branch claude/write-access-test dari main, buat test-sementara/claude-write-test.md berisi "Claude GitHub write access test.", commit dengan pesan "test: verify Claude GitHub write access". Jangan merge atau mengubah file lain. Laporkan SHA, branch, URL commit; jika gagal laporkan status, endpoint, pesan error dan X-Accepted-GitHub-Permissions jika tersedia, tanpa credential.
+- ChatGPT akan memeriksa commit dan isi file dari branch tersebut setelah Master menyampaikan hasil. Hanya setelah commit Claude terbukti berhasil, catat VERIFIED untuk write access. PR/merge adalah verifikasi terpisah.
+- Branch + PR direkomendasikan untuk review dan persetujuan Master sebelum merge; bukan solusi atas kurangnya Contents write. Branch protection/ruleset dapat dipertimbangkan untuk membatasi direct push.
+- AGENTS.md Ponytail sudah tersedia dan berhasil dibaca oleh ChatGPT; aturan full-mode berlaku. Belum ada perubahan source Jarvis dalam catatan ini.
+
+**Referensi:** https://docs.github.com/en/apps/using-github-apps/reviewing-and-modifying-installed-github-apps ; https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps ; https://github.com/github/github-mcp-server/blob/main/docs/remote-server.md ; https://docs.github.com/en/rest/using-the-rest-api/troubleshooting-the-rest-api
+
+**Next action:** Master identifikasi app dan permission efektif, kemudian Claude menjalankan tes commit. Jangan tandai VERIFIED sebelum bukti tersedia.
