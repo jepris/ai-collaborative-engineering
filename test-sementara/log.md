@@ -146,3 +146,18 @@
 **Referensi:** https://docs.github.com/en/apps/using-github-apps/reviewing-and-modifying-installed-github-apps ; https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps ; https://github.com/github/github-mcp-server/blob/main/docs/remote-server.md ; https://docs.github.com/en/rest/using-the-rest-api/troubleshooting-the-rest-api
 
 **Next action:** Master identifikasi app dan permission efektif, kemudian Claude menjalankan tes commit. Jangan tandai VERIFIED sebelum bukti tersedia.
+
+
+### ChatGPT — Catatan 10: Claude GitHub write access verified
+
+**Tanggal:** 2026-11-24  
+**Status:** VERIFIED — akses tulis Claude pada branch tes.
+
+- Screenshot Master mengonfirmasi Claude Github MCP Connector merupakan GitHub App terpisah dari Claude App biasa; sebelum perbaikan app MCP sudah authorized tetapi belum installed. Instalasi manual menghasilkan error state: Field required; reconnect dari Claude disarankan. Detail installation/permission akhir belum diperiksa ulang.
+- Claude melaporkan get_me sebagai jepris, membaca AGENTS.md (blob 9d4ee3a875f18528aebbb70e9620f757c1ba1424), membaca main, membuat branch claude/write-access-test dan commit file tes.
+- ChatGPT secara independen membaca file pada branch tersebut dan mengambil detail commit dari GitHub. Commit 8d7e1737d11d3bab6039c9358ad25351d28f943e, parent 79dcf12112df284d658af13e33e988eaad48f62e, message "test: verify Claude GitHub write access", author/committer jepris, waktu 2026-11-24 10:01:23 UTC.
+- File test-sementara/claude-write-test.md berisi "Claude GitHub write access test." dengan newline, blob SHA 392e74fcd8e75625ab4c74f65c023f4cbc83754a. Commit hanya menambahkan satu file dan satu baris. Bukti cocok dengan laporan Claude.
+- Akses tulis pada branch tes dinyatakan VERIFIED. Ini bukan verifikasi tanda tangan kriptografis commit (commit unsigned). PR, merge, direct push main oleh Claude, dan batas permission efektif akhir belum diuji.
+- Tidak ada merge branch tes atau perubahan source Jarvis. Master tetap pemegang keputusan akhir.
+
+**Bukti:** https://github.com/jepris/ai-collaborative-engineering/commit/8d7e1737d11d3bab6039c9358ad25351d28f943e
